@@ -1,0 +1,13 @@
+"Gamemode"
+{
+	"name"		"GMod: Racing"
+	"version"	"0.01"
+
+	"author_name"	""
+	"author_email"	""
+	"author_url"	""
+	
+	"icon"		""
+	"info"		""
+	"hide"		""
+}
