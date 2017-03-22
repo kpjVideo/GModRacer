@@ -1,5 +1,6 @@
-"Gamemode"
+"_racing"
 {
+	"title"		"GMod: Racing"
 	"name"		"GMod: Racing"
 	"version"	"0.01"
 

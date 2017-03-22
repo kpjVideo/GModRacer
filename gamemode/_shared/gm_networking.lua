@@ -9,12 +9,6 @@ _GM.Networking = {}
 
 function _GM.Networking:SetNetVar( _Entity, _Name, _Var )
 
-	if not isstring( _Name ) then
-		_GM.ErrorHandler:DebugPrint( 1, _Entity:Nick() .. " attempted to name a networked variable by something that isn't a string...", Color( 255, 0, 0 ) )
-
-		return
-	end
-
 	_Entity:SetNetVar( tostring( _Name ), _Var )
 end
 
@@ -24,13 +18,7 @@ end
 -----------------------------------------------------------]]
 
 function _GM.Networking:GetNetVar( _Entity, _Name )
-
-	if not isstring( _Name ) then
-		_GM.ErrorHandler:DebugPrint( 1, _Entity:Nick() .. " attempted to grab a networked variable by something that isn't a string...", Color( 255, 0, 0 ) )
-
-		return
-	end
-
+	
 	return _Entity:GetNetVar( tostring( _Name ) )
 end
 

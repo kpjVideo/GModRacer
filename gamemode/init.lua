@@ -106,6 +106,7 @@ function GM:PlayerFrozeObject( ply, entity, physobject )
 end
 
 _GM.Resources:IncludeFolder( '_server' )
+_GM.Resources:IncludeFolder( '_modules' )
 
 _GM.Resources:AddCSFolder( '_client' )
 _GM.Resources:AddCSFolder( '_client/_character_creation' )

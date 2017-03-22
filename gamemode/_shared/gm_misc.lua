@@ -68,13 +68,3 @@ hook.Add( 'OnReloaded', '_Reload', function()
 		_value:Notify( 'Gamemode Reloaded' )
 	end
 end)
-
-function NestedHasValue(tab, str, index)
-	for k, v in pairs(tab) do
-		if v[index] ==  str then
-			return true
-		end
-	end
-
-	return false
-end

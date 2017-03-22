@@ -1,19 +1,19 @@
 _GM = GM or GAMEMODE
 
-require("tmysql4")
+require 'tmysql4'
 
 _GM.MYSQL = {}
-_GM.MYSQL.Host = "localhost"
+_GM.MYSQL.Host = 'localhost'
 _GM.MYSQL.Port = 3306
-_GM.MYSQL.User = "root"
-_GM.MYSQL.Pass = ""
-_GM.MYSQL.DB = "_racing"
+_GM.MYSQL.User = 'root'
+_GM.MYSQL.Pass = ''
+_GM.MYSQL.DB = '_racing'
 
 
 if CLIENT_MULTI_STATEMENTS then
-	_GM.ErrorHandler:DebugPrint( 1, "TMYSQL4 MODULE LOADED SUCCESSFULLY!", Color( 0, 255, 0 ) )
+	_GM.ErrorHandler:DebugPrint( 1, 'TMYSQL4 MODULE LOADED SUCCESSFULLY!', Color( 0, 255, 0 ) )
 else
-	_GM.ErrorHandler:DebugPrint( 1, "TMYSQL4 DID NOT LOAD PROPERLY! IS THE MODULE INSTALLED?", Color( 255, 0, 0 ) )
+	_GM.ErrorHandler:DebugPrint( 1, 'TMYSQL4 DID NOT LOAD PROPERLY! IS THE MODULE INSTALLED?', Color( 255, 0, 0 ) )
 	return
 end
 
@@ -27,9 +27,9 @@ function _GM.MYSQL:Connect()
 	end
  
 	if _cur_status then
-		_GM.ErrorHandler:DebugPrint( 1, "Gamemode Database successfully connected: " .. tostring( _GM.MYSQL.Host ), Color( 0, 255, 0 ) )
+		_GM.ErrorHandler:DebugPrint( 1, 'Gamemode Database successfully connected: ' .. tostring( _GM.MYSQL.Host ), Color( 0, 255, 0 ) )
 	else
-		_GM.ErrorHandler:DebugPrint( 1, "Gamemode Database failed to connect to MySQL.", Color( 255, 0, 0 ) )
+		_GM.ErrorHandler:DebugPrint( 1, 'Gamemode Database failed to connect to MySQL.', Color( 255, 0, 0 ) )
 	end
 end
 
@@ -37,7 +37,7 @@ _GM.MYSQL:Connect()
 
 function _GM.MYSQL:Disconnect()
 	DB:Disconnect()
-	_GM.ErrorHandler:DebugPrint( 1, "Database has been disconnected", Color( 255, 255, 0 ) )
+	_GM.ErrorHandler:DebugPrint( 1, 'Database has been disconnected', Color( 255, 255, 0 ) )
 	-- ¯\_(ツ)_/¯
 end
  
@@ -46,7 +46,7 @@ function _GM.MYSQL:Query( _String, _Callback )
 	if DB then
 		DB:Query( _String, _Callback )
 	else
-		_GM.ErrorHandler:DebugPrint( 1, "No database detected. wtf?", Color( 255, 0, 0 ) )
+		_GM.ErrorHandler:DebugPrint( 1, 'No database detected. wtf?', Color( 255, 0, 0 ) )
 	end 
 end
 
@@ -58,7 +58,7 @@ function _GM.MYSQL:DebugQuery( _String, _Callback )
 	if DB then
 		DB:Query( _String, onCompleted )
 	else
-		_GM.ErrorHandler:DebugPrint( 1, "No database detected. wtf?", Color( 255, 0, 0 ) )
+		_GM.ErrorHandler:DebugPrint( 1, 'No database detected. wtf?', Color( 255, 0, 0 ) )
 	end
 
 	function onCompleted( _Results )
@@ -68,9 +68,9 @@ function _GM.MYSQL:DebugQuery( _String, _Callback )
 		end
 
 		if _Results[1].status then
-			_GM.ErrorHandler:DebugPrint( 1, "Query " .. _NiceString .. " ran successfully", Color( 255, 255, 0 ) )
+			_GM.ErrorHandler:DebugPrint( 1, 'Query ' .. _NiceString .. ' ran successfully', Color( 255, 255, 0 ) )
 		else
-			_GM.ErrorHandler:DebugPrint( 1, "Query " .. _NiceString .. " failed!\n" .. _Results[1].error, Color( 255, 0, 0 ) )
+			_GM.ErrorHandler:DebugPrint( 1, 'Query ' .. _NiceString .. ' failed!\n' .. _Results[1].error, Color( 255, 0, 0 ) )
 			return
 		end
 

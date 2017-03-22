@@ -141,7 +141,6 @@ hook.Add( "PlayerEnteredVehicle", "_Wtf", function( _Player, _Vehicle )
 		_Player:SetMoveType( MOVETYPE_NOCLIP )
 	end)
 
-	print( "BLAH: " .. tostring( _Player:GetMoveType() == MOVETYPE_NOCLIP  ) )
 end)
 
 hook.Add("VC_EngineExploded", "_GameOver", function( _Ent )
@@ -280,9 +279,10 @@ function _GM.Vehicles:EndRace()
 
 	if not GetGlobalBool("RACE") then return end
 
-	timer.Simple( 10, function()
+	timer.Create( "Restart", 10, 1, function()
 		SetGlobalBool("RACE", false)
 		_GM.Vehicles:BeginRace()
+		print("STARTING RACE BECAUSE TIMER IS UP YO")
 	end)
 end
 
@@ -295,9 +295,13 @@ function _GM.Vehicles:BeginRace()
 
 	game.CleanUpMap( false )
 
-	net.Start( "_SpawnPoints" )
-	net.WriteTable( _GM.Racing.Checkpoints[game.GetMap()] )
-	net.Broadcast( )
+	--No longer needed due to server
+
+	--net.Start( "_SpawnPoints" )
+	--net.WriteTable( _GM.Racing.Checkpoints[game.GetMap()] )
+	--net.Broadcast( )
+
+	_GM.Racing:SpawnCheckpoints( _GM.Racing.Checkpoints[game.GetMap()] )
 
 	for k, v in pairs( ents.FindByClass( "prop_vehicle_jeep" ) ) do
 		v:Remove()
@@ -307,6 +311,8 @@ function _GM.Vehicles:BeginRace()
 
 	for k, v in pairs( player.GetAll() ) do
 
+		v.Checkpoints = {}
+		
 		v:SetTeam(1)
 		v:Invis( false )
 
@@ -413,7 +419,7 @@ function _P:SetNewRecord( _Length )
 	end)
 
 	for k, v in pairs( player.GetAll() ) do
-		v:PrintMessage( HUD_PRINTTALK, self:Nick() .. " has beat his personal record! (" .. string.FormattedTime( Entity(1):GetNW2Int("NewTime"), "%02im %02is" ) .. ")" )
+		v:PrintMessage( HUD_PRINTTALK, self:Nick() .. " has beat his personal record! (" .. string.FormattedTime( Entity(2):GetNW2Int("NewTime"), "%02im %02is" ) .. ")" )
 	end
 end
 
@@ -444,7 +450,7 @@ local _Camera
 
 function test()
 
-	if not Entity(1):InVehicle() || not Entity(1):GetVehicle():IsValid() then
+	if not Entity(2):InVehicle() || not Entity(2):GetVehicle():IsValid() then
 		return
 	end
 
@@ -456,18 +462,18 @@ function test()
 
 	_Camera = ents.Create( "gmod_cameraprop" )
 	_Camera:SetModel( "models/hunter/blocks/cube025x025x025.mdl" )
-	_Camera:SetPos( Entity(1):GetVehicle():GetPos() + Vector( 5, 160, 50 ) )
+	_Camera:SetPos( Entity(2):GetVehicle():GetPos() + Vector( 5, 160, 50 ) )
 	_Camera:Spawn()
 
 	_Camera:SetLocked( 1 )
 
-	local _FreezeBefore = Entity(1):GetVehicle():GetPhysicsObject():GetVelocity()
+	local _FreezeBefore = Entity(2):GetVehicle():GetPhysicsObject():GetVelocity()
 
-	freezecar( Entity(1):GetVehicle() )
+	freezecar( Entity(2):GetVehicle() )
 
 	hook.Add( "Think", "__A", function()
 		if _Camera:IsValid() then
-			_Camera:TrackEntity( Entity(1):GetVehicle(), Vector( 0, 0, 0 ) )
+			_Camera:TrackEntity( Entity(2):GetVehicle(), Vector( 0, 0, 0 ) )
 		end
 	end)
 
@@ -475,18 +481,18 @@ function test()
 		v:SetViewEntity( _Camera )
 	end
 
-	Entity(1):SetNW2Int( "NewTime", RACE_LENGTH - timer.TimeLeft( "BlowUp" ) ) --EXAMPLE = 8 SEC
+	Entity(2):SetNW2Int( "NewTime", RACE_LENGTH - timer.TimeLeft( "BlowUp" ) ) --EXAMPLE = 8 SEC
 
-	local _NewTime = Entity(1):GetNW2Int( "NewTime" ) --HEY MAN, NEW TIME IS 8 SECONDS
+	local _NewTime = Entity(2):GetNW2Int( "NewTime" ) --HEY MAN, NEW TIME IS 8 SECONDS
 
 	if _NewTime && _NewTime != 0 then --NEWTIME IS REAL AND NOW, IT'S NOT EQUAL TO 0!
-		if _NewTime < Entity(1):GetNW2Int( "BestTime" ) or 0 then --8 SEC IS LESS THAN 360 BEFORE SO RECORD ME!
-			Entity(1):SetNewRecord( RACE_LENGTH - timer.TimeLeft( "BlowUp" ) )
+		if _NewTime < Entity(2):GetNW2Int( "BestTime" ) or 0 then --8 SEC IS LESS THAN 360 BEFORE SO RECORD ME!
+			Entity(2):SetNewRecord( RACE_LENGTH - timer.TimeLeft( "BlowUp" ) )
 		end
 	end
 
 	net.Start( "_Winner_Screen" )
-		net.WriteEntity( Entity(1) )
+		net.WriteEntity( Entity(2) )
 	net.Broadcast( )
 
 	--game.SetTimeScale( 0.4 )
@@ -509,9 +515,9 @@ function test()
 			_Camera = nil
 		end
 
-		if Entity( 1 ):InVehicle() && Entity(1):GetVehicle():IsValidVehicle() then
-			unfreezecar( Entity(1):GetVehicle() )
-			Entity(1):GetVehicle():GetPhysicsObject():SetVelocity( _FreezeBefore )
+		if Entity( 2 ):InVehicle() && Entity(2):GetVehicle():IsValidVehicle() then
+			unfreezecar( Entity(2):GetVehicle() )
+			Entity(2):GetVehicle():GetPhysicsObject():SetVelocity( _FreezeBefore )
 		end
 	end)
 end

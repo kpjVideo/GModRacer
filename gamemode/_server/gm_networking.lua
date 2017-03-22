@@ -92,71 +92,6 @@ hook.Add( 'PlayerInitialSpawn', '_LoadData', function( _Player )
    timer.Simple( 0.5, function() _Player:SetMoveType( MOVETYPE_NOCLIP ) _GM.SV_Networking:PlayerLoadout( _Player ) end)
 end)
 
-function util.GetAlivePlayers()
-   local alive = {}
-   for k, p in pairs(player.GetAll()) do
-      if IsValid(p) and p:Alive() and p:Team() == 1 then
-         table.insert(alive, p)
-      end
-   end
-
-   return alive
-end
-
-function util.GetNextAlivePlayer(ply)
-   local alive = util.GetAlivePlayers()
-
-   if #alive < 1 then return nil end
-
-   local prev = nil
-   local choice = nil
-
-   if IsValid(ply) then
-      for k,p in pairs(alive) do
-         if prev == ply then
-            choice = p
-         end
-
-         prev = p
-      end
-   end
-
-   if not IsValid(choice) then
-      choice = alive[1]
-   end
-
-   return choice
-end
-
-plymeta = FindMetaTable( "Player" )
-
-local oldSpectate = plymeta.Spectate
-function plymeta:Spectate(type)
-   oldSpectate(self, type)
-
-   -- NPCs should never see spectators. A workaround for the fact that gmod NPCs
-   -- do not ignore them by default.
-   self:SetNoTarget(true)
-
-   if type == OBS_MODE_ROAMING then
-      self:SetMoveType(MOVETYPE_NOCLIP)
-   end
-end
-
-local oldSpectateEntity = plymeta.SpectateEntity
-function plymeta:SpectateEntity(ent)
-   oldSpectateEntity(self, ent)
-
-   if IsValid(ent) and ent:IsPlayer() then
-      self:SetupHands(ent)
-   end
-end
-
-local oldUnSpectate = plymeta.UnSpectate
-function plymeta:UnSpectate()
-   oldUnSpectate(self)
-   self:SetNoTarget(false)
-end
 
 hook.Add( 'KeyRelease', 'KappaJ.Racing.KeyRelease.DisableUse', function( _Player, _Key )
       if _Key == IN_USE then
@@ -261,6 +196,10 @@ function _P:Invis( _Bool )
       self:SetColor( Color( self:GetColor().r, self:GetColor().g, self:GetColor().b, 255 ) )
    end
 end
+
+hook.Add( "PlayerLoadout", "KappaJ.Debug.PlayerLoadout.Strip", function( _Player )
+   _Player:StripWeapons()
+end)
 
 hook.Add( 'PlayerSpawn', '_GiveWeapons', function( _Player )
 	_GM.SV_Networking:PlayerLoadout( _Player )

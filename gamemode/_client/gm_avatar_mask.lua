@@ -65,6 +65,14 @@ surface.CreateFont( "Countdown", {
     antialias = true,
 } )
 
+surface.CreateFont( "LAPS", {
+    font = "Roboto",
+    extended = true,
+    size = 50,
+    weight = 500,
+    antialias = true,
+} )
+
 surface.CreateFont( "Health", {
     font = "akbar",
     extended = true,
@@ -162,7 +170,73 @@ function MakeNoteBar( _String, _Timer, _Timer_Length )
     draw.SimpleText( _String, "Countdown", ScrW() / 2, 17 + _additive, Color( 2, 136, 209 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 end
 
+local polate = 0
+
+function MakeSquareBar( _Max )
+
+    MAX_CHECKPOINTS = #ents.FindByClass( "_racecheckpoint" )
+
+    local _w = 500
+    local _h = 58
+    local _additive = 2
+
+    draw.RoundedBox( 2, ScrW() - 133, 5, 128, _h, Color( 33, 33, 33, 255 ) )
+    
+    if _Max then
+
+        local _T = _Max / MAX_CHECKPOINTS
+
+        polate = Lerp( 2 * FrameTime(), polate, _T )
+
+        _additive = 1
+
+        draw.RoundedBox( 0, ScrW() - 133, _h + 2, 128 * polate, 3, Color( 2, 136, 209, 255 ) )
+    end
+
+    draw.SimpleText( tostring( _Max ) .. --[[LAP NUM]] "/" .. tostring( MAX_CHECKPOINTS ), "LAPS", ScrW() - ( 145 / 2 ), 32.5, Color( 2, 136, 209 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+end
+
+local _WrongWay = Material( "proximity/wrong_way.png" )
+
+hook.Add("HUDPaint", "KappaJ.Debug.HUDPaint.Laps", function()
+    MakeSquareBar( LocalPlayer().CurrentCheckpoint )
+
+    --Eventually detect if looking in wrong direction?
+    --I really don't know my way around angle calculations :/
+
+    --[[
+    if not LocalPlayer().CurrentCheckpoint then
+        LocalPlayer().CurrentCheckpoint = 0
+    end
+
+    local eyePos = LocalPlayer():GetVehicle():EyePos()
+    local difference = eyePos - _GM.Racing.ActiveCheckpoints[ LocalPlayer().CurrentCheckpoint + 1 ]:EyePos()
+
+    print( difference )
+    local trace = util.QuickTrace(eyePos, difference)
+
+    if trace.Hit then
+        print("WE SEEN DEM")
+    else
+        print("NO GUD")
+    end
+
+    //print( _GM.Racing.ActiveCheckpoints[ LocalPlayer().CurrentCheckpoint + 1 ]:GetAngles() )
+    //print( LocalPlayer():GetVehicle():GetAngles() )
+
+    if LocalPlayer():IsValid() && LocalPlayer():InVehicle() && LocalPlayer():GetVehicle():IsValidVehicle() then
+        if not LocalPlayer():IsLineOfSightClear( _GM.Racing.ActiveCheckpoints[ LocalPlayer().CurrentCheckpoint + 1 ] ) then
+            surface.SetDrawColor( 255, 255, 255, math.abs( math.sin( CurTime() * 1.1 ) ) * 200 )
+            surface.SetMaterial( _WrongWay )
+            surface.DrawTexturedRect( ScrW() / 2 - ( 800 / 2 ) / 2, ScrH() / 2 - ( 490 / 2 ) / 2 - 200, 800 / 2, 490 / 2 )
+        end
+    end
+    ]]--
+end)
+
 net.Receive( "_BeginRace", function( _Length )
+
+    LocalPlayer().CurrentCheckpoint = 0
 
     timer.Destroy("RaceCountdown")
     timer.Destroy("Countdown")

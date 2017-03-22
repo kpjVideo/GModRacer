@@ -137,8 +137,8 @@ function _P:SetXP( _Amount )
 	self:SetNetVar( "XP", tonumber( _Amount ) )
 end
 
-function _P:ClearEquipTable( )
-	self:SendLua("EQUIP_TABLE = {}")
+function _P:Alive( )
+	return self:Team() == 1
 end
 
 function _P:GetRankString( )
@@ -152,6 +152,61 @@ function _P:GetRankString( )
 	_GM.RankStrings["user"] = "Guest"
 
 	return _GM.RankStrings[ self:GetUserGroup() ] or "Unknown Rank"
+end
+
+local oldSpectate = _P.Spectate
+
+function _P:Spectate(type)
+   oldSpectate(self, type)
+
+   -- NPCs should never see spectators. A workaround for the fact that gmod NPCs
+   -- do not ignore them by default.
+   self:SetNoTarget(true)
+
+   if type == OBS_MODE_ROAMING then
+      self:SetMoveType(MOVETYPE_NOCLIP)
+   end
+end
+
+local oldSpectateEntity = _P.SpectateEntity
+function _P:SpectateEntity(ent)
+   oldSpectateEntity(self, ent)
+
+   if IsValid(ent) and ent:IsPlayer() then
+      self:SetupHands(ent)
+   end
+end
+
+local oldUnSpectate = _P.UnSpectate
+function _P:UnSpectate()
+   oldUnSpectate(self)
+   self:SetNoTarget(false)
+end
+
+
+if SERVER then
+	util.AddNetworkString 'ColoredMessage'
+
+	function BroadcastMsg( ... )
+		local args = { ... }
+		net.Start( 'ColoredMessage' )
+		net.WriteTable( args )
+		net.Broadcast( )
+	end
+else
+	net.Receive("ColoredMessage",function(len) 
+		local msg = net.ReadTable()
+		chat.AddText(unpack(msg))
+		chat.PlaySound()
+	end)
+end
+
+
+function _P:PlayerMsg( ... )
+	local args = { ... }
+	net.Start( 'ColoredMessage' )
+	net.WriteTable( args )
+	net.Send( self )
 end
 
 --fuck you gm_spawn commands -kpj 2k15
@@ -174,3 +229,7 @@ if CLIENT then
 		return true--LocalPlayer():IsDeveloper()
 	end)
 end
+
+hook.Add( 'PlayerSwitchFlashlight', 'KappaJ.Debug.PlayerSwitchFlashlight.Disallow', function( )
+	return false
+end)

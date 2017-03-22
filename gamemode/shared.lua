@@ -50,22 +50,6 @@ ChatRadius_Yell = 800
 
 _GM = GM or GAMEMODE
 
-
-_GM.ErrorHandler = {}
-_GM.ErrorHandler.Prefix = "[PROX-DEBUG]"
-
-function _GM.ErrorHandler:DebugPrint( _Type, _Message, _Color )
-	
-	if not GAMEMODE_DEBUG then return end
-
-	if _Type >= 1 and not _Color then
-		ErrorNoHalt( _GM.ErrorHandler.Prefix .. " " .. _Message .. "\n" )
-	else 
-		MsgC( _Color or Color( 255, 0, 0 ), _GM.ErrorHandler.Prefix .. " " .. _Message .. "\n" )
-	end
-
-end
-
 _GM.Resources = {}
 
 function _GM.Resources:ExecuteFolder( _FileDir )
@@ -98,4 +82,20 @@ function _GM.Resources:AddCSFolder( _FileDir )
 end
 
 _GM.Resources:IncludeFolder( '_shared' )
-_GM.Resources:IncludeFolder( '_modules' )
+
+function _GM.Resources:LoadMapBases( )
+	include( '_modules/base.lua' )
+	print( "Successfully included base file." )
+
+	if not file.Find( GAMEMODE_DIR .. '/gamemode/' .. '_modules/' .. string.lower( game.GetMap() ) .. '.lua', "GAME" ) then
+		_GM.ErrorHandler:DebugPrint( 1, "MAP CONFIGURATION FOR: " .. game.GetMap() .. " DOES NOT EXIST!", Color( 255, 0, 0 ) )
+
+		return
+	end
+
+	include( '_modules/' ..  string.lower( game.GetMap() ) .. '.lua' )
+
+	print( "Successfully included map configuration file." )
+end
+
+_GM.Resources:LoadMapBases( )

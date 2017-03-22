@@ -24,8 +24,9 @@ end)
 
 local _MaterialLol = Material( "proximity/race_start" )
 
-hook.Add( "PostDrawOpaqueRenderables", "KappaJ.Racing.PostDrawOpaqueRenderables.StartEnd", function()
 
+hook.Add( "PostDrawOpaqueRenderables", "KappaJ.Racing.PostDrawOpaqueRenderables.StartEnd", function()
+	 
      local __test = LocalPlayer():EyeAngles()
      __test:RotateAroundAxis( __test:Right(), 90 )
      __test:RotateAroundAxis( __test:Up(), -90 )

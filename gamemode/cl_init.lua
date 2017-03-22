@@ -57,5 +57,6 @@ _GM.Resources:IncludeFolder( '_client' )
 --_GM.Resources:IncludeFolder( '_client/_inventory' )
 
 _GM.Resources:IncludeFolder( '_shared' )
+_GM.Resources:IncludeFolder( '_modules' )
 
 _GM.Client = {}
