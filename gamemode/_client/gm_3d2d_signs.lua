@@ -40,18 +40,6 @@ hook.Add( "PostDrawOpaqueRenderables", "KappaJ.Racing.PostDrawOpaqueRenderables.
      cam.Start3D2D( _GM.Racing.StartFinish[game.GetMap()][1][1] or Vector( 0, 0, 0 ), _GM.Racing.StartFinish[game.GetMap()][1][2] or Angle(0,0,0), 0.5 )
            draw.DrawText("START","START",0,0,Color(255,0,0,255),TEXT_ALIGN_CENTER)
      cam.End3D2D()
-
-     --[[
-     cam.Start3D2D( _GM.Racing.StartFinish[game.GetMap()][1][1] - Vector( -250, -50, -30 ) or Vector( 0, 0, 0 ), _GM.Racing.StartFinish[game.GetMap()][1][2] - Angle( 0, 180, 0 ) or Angle(0,0,0), 0.5 )
-     	  surface.SetDrawColor( 255, 255, 255, 255 )
-     	  surface.SetMaterial( _MaterialLol	)
-     	  surface.DrawTexturedRect( 0, 0, 1024, 256 )
-     cam.End3D2D()
-
-     cam.Start3D2D( _GM.Racing.StartFinish[game.GetMap()][1][1] or Vector( 0, 0, 0 ), _GM.Racing.StartFinish[game.GetMap()][1][2] - Angle( 0, 180, 0 ) or Angle(0,0,0), 0.5 )
-          draw.DrawText("START","START",0,0,Color(255,0,0,255),TEXT_ALIGN_CENTER)
-     cam.End3D2D()
-     ]]--
 end)
 
 local matMaterial = Material( "pp/texturize" )
@@ -68,16 +56,32 @@ hook.Add( "RenderScreenspaceEffects", "RenderTexturize", function()
 
 end )
 
+local _bad_ = {
+	CHudHealth = true,
+	CHudCrosshair = true,
+	CHudDeathNotice = true,
+	CHudZoom = true,
+	CTargetID = true,
+	CHudWeaponSelection = true,
+	CHudWeapon = true,
+	CHudHistoryResource = true,
+}
+
+hook.Add( "HUDShouldDraw", "KappaJ.Debug.HUDShouldDraw.HideBad", function( _Name )
+	if ( _bad_[ _Name ] ) then
+		return false
+	end
+end)
+
 local _bad = {
 	CHudGMod = true,
 }
+
 hook.Add( "HUDShouldDraw", "KappaJ.Debug.HUDShouldDraw.WinnerInfo", function( _Name )
 
 	if GetGlobalBool("WINNER") then
 		if ( _bad[ _Name ] ) then
 			return true
-		else
-			return false
 		end
 	end
 

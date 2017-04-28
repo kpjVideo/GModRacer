@@ -129,10 +129,37 @@ function _GM.MYSQL:CreateDataTables( )
 				UNIQUE KEY `Index 1` (`_steam_id`(100),`_map`(100))
 			]])
 
-			_GM.ErrorHandler:DebugPrint( 1, "Query finished! -- Player data tables created", Color( 255, 0, 0 ) )
+			_GM.ErrorHandler:DebugPrint( 1, "Query finished! -- Data tables created", Color( 255, 0, 0 ) )
+		end
+	end)
+end
+
+function _GM.MYSQL:CreateErrorRecords( )
+	_GM.MYSQL:Query( "SELECT COUNT(*) FROM _errors", function( _return )
+
+		if not _return[1].data or table.Count( _return[1].data ) == 0 then
+			_GM.ErrorHandler:DebugPrint( 1, "Creating error log tables (They don't seem to exist yet)", Color( 255, 255, 0 ) )
+
+			_GM.MYSQL:CreateTable( '_errors', [[
+				`hash` int(11) NOT NULL AUTO_INCREMENT,
+				`user` text NOT NULL,
+				`full_error` text NOT NULL,
+				`file` text NOT NULL,
+				`error` text NOT NULL,
+				`line_number` int(11) NOT NULL,
+				`realm` enum('SERVER','CLIENT') NOT NULL,
+				`addon` int(11) DEFAULT NULL,
+				`gamemode` text NOT NULL,
+				`os` text,
+				`time_stamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				UNIQUE KEY `Index 1` (`hash`)
+			]])
+
+			_GM.ErrorHandler:DebugPrint( 1, "Query finished! -- Error log data tables created", Color( 255, 0, 0 ) )
 		end
 	end)
 end
 
 _GM.MYSQL:CreateRPTables( )
 _GM.MYSQL:CreateDataTables( )
+_GM.MYSQL:CreateErrorRecords( )

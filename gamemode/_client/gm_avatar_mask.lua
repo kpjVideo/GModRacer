@@ -17,6 +17,10 @@ function PANEL:SetPlayer( id )
     self.Avatar:SetPlayer( id, self:GetWide() )
 end
 
+function PANEL:SetSteamID( id )
+    self.Avatar:SetSteamID( util.SteamIDTo64( id ) )
+end
+
 function PANEL:Paint(w, h)
     render.ClearStencil() -- some people are so messy
     render.SetStencilEnable(true)
@@ -127,12 +131,6 @@ end)
 
 hook.Remove( "ShouldDrawLocalPlayer", "_Blyat" )
 
-hook.Add("HUDPaint", "KappaJ.Debug.HUDPaint.Health", function()
-    if VC_LOADED and LocalPlayer():InVehicle() and LocalPlayer():GetVehicle():IsValid() then
-        draw.SimpleText( "Health: " .. tostring( math.Round( LocalPlayer():GetVehicle():VC_GetHealth(true) ) ), "Health", ScrW() / 2 - 940, ( ScrH() / 2 ) - 525, Color( 0, 0, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
-    end
-end)
-
 net.Receive( "_GameOver", function ( _length )
     local _Player = LocalPlayer()
 
@@ -197,46 +195,91 @@ function MakeSquareBar( _Max )
 end
 
 local _WrongWay = Material( "proximity/wrong_way.png" )
+local _WaitMe = 0
 
-hook.Add("HUDPaint", "KappaJ.Debug.HUDPaint.Laps", function()
-    MakeSquareBar( LocalPlayer().CurrentCheckpoint )
-
+hook.Add("HUDPaint", "KappaJ.Debug.HUDPaint.WrongDirection", function()
     --Eventually detect if looking in wrong direction?
     --I really don't know my way around angle calculations :/
 
-    --[[
-    if not LocalPlayer().CurrentCheckpoint then
-        LocalPlayer().CurrentCheckpoint = 0
-    end
+    if LocalPlayer():IsValid() && LocalPlayer():InVehicle() && LocalPlayer():GetVehicle():IsValidVehicle() && LocalPlayer():GetNW2Int( "Checkpoint" ) != nil && LocalPlayer():GetNW2Int( "Checkpoint" ) != MAX_CHECKPOINTS  then
+        if _GM.Racing.ActiveCheckpoints && _GM.Racing.ActiveCheckpoints[ LocalPlayer():GetNW2Int( "Checkpoint" ) + 1 ] && _GM.Racing.ActiveCheckpoints[ LocalPlayer():GetNW2Int( "Checkpoint" ) + 1 ]:IsValid() then
+            if not _GM.Racing.ActiveCheckpoints[ LocalPlayer():GetNW2Int( "Checkpoint" ) + 1 ]:GetPos():ToScreen().visible then
+                _WaitMe = _WaitMe + 1
 
-    local eyePos = LocalPlayer():GetVehicle():EyePos()
-    local difference = eyePos - _GM.Racing.ActiveCheckpoints[ LocalPlayer().CurrentCheckpoint + 1 ]:EyePos()
+                --yes, i'm seriously making a timer based on frames, sue me...
 
-    print( difference )
-    local trace = util.QuickTrace(eyePos, difference)
-
-    if trace.Hit then
-        print("WE SEEN DEM")
-    else
-        print("NO GUD")
-    end
-
-    //print( _GM.Racing.ActiveCheckpoints[ LocalPlayer().CurrentCheckpoint + 1 ]:GetAngles() )
-    //print( LocalPlayer():GetVehicle():GetAngles() )
-
-    if LocalPlayer():IsValid() && LocalPlayer():InVehicle() && LocalPlayer():GetVehicle():IsValidVehicle() then
-        if not LocalPlayer():IsLineOfSightClear( _GM.Racing.ActiveCheckpoints[ LocalPlayer().CurrentCheckpoint + 1 ] ) then
-            surface.SetDrawColor( 255, 255, 255, math.abs( math.sin( CurTime() * 1.1 ) ) * 200 )
-            surface.SetMaterial( _WrongWay )
-            surface.DrawTexturedRect( ScrW() / 2 - ( 800 / 2 ) / 2, ScrH() / 2 - ( 490 / 2 ) / 2 - 200, 800 / 2, 490 / 2 )
+                if _WaitMe >= 300 then
+                    surface.SetDrawColor( 255, 255, 255, math.abs( math.sin( CurTime() * 1.1 ) ) * 200 )
+                    surface.SetMaterial( _WrongWay )
+                    surface.DrawTexturedRect( ScrW() / 2 - ( 800 / 2 ) / 2, ScrH() / 2 - ( 490 / 2 ) / 2 - 200, 800 / 2, 490 / 2 )
+                end
+            else
+                _WaitMe = 0
+            end
         end
     end
-    ]]--
+end)
+
+hook.Add("HUDPaint", "KappaJ.Debug.HUDPaint.Laps", function()
+    if LocalPlayer():GetNW2Int( "Checkpoint" )  != nil then
+        MakeSquareBar( LocalPlayer():GetNW2Int( "Checkpoint" ) )
+    end
+end)
+
+surface.CreateFont( "Ranking", {
+    font = "Roboto",
+    size = 20,
+    weight = 400,
+    antialias = true,
+} )
+
+hook.Add("HUDPaint", "KappaJ.Debug.HUDPaint.Ranking", function()
+
+    if not LocalPlayer():Alive() then return end
+
+    local __racers = {}
+
+    for k, v in pairs( player.GetAll() ) do
+
+        __racers[k] = { v, v:GetNW2Int( "Checkpoint" ), v:GetNW2Int( "Checkpoint_Time" ) }
+        table.sort( __racers, function( x, y )
+            local __clause = ( x[2] > y[2] ) --&& ( x[3] < y[3] )
+
+            if x[2] == y[2] then
+                return x[3] < y[3]
+            end
+
+            return __clause
+        end )
+
+        for _, _v in pairs( __racers ) do 
+
+            local __name = _v[1]:Nick()
+
+            local __additive = ( _ - 1 ) * 35
+
+            draw.RoundedBox( 2, 5, 5 + __additive, 175, 30, Color( 33, 33, 33, 255 ) )
+            draw.RoundedBox( 2, 5, 5 + __additive, 25, 30, Color( 2, 136, 209, 255 ) )
+
+            draw.SimpleText( _, "Ranking", 6 + 20 / 2, ( 38 / 2 ) + __additive + 1, Color( 255, 255, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+            if _v[1] == LocalPlayer() then
+                draw.RoundedBox( 2, 5, 33 + __additive, 175, 3, Color( 2, 136, 209, 255 ) )
+            end
+
+            if string.len( __name ) >= 16 then
+                __name = string.sub( __name, 0, 13 ) .. "..."
+            end
+
+            draw.SimpleText( __name, "Ranking", 35, ( 33 / 2 + 3 ) + __additive, Color( 255, 255, 255 ), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+
+        end
+    end
 end)
 
 net.Receive( "_BeginRace", function( _Length )
 
-    LocalPlayer().CurrentCheckpoint = 0
+    LocalPlayer():SetNW2Int( "Checkpoint", 0 )
 
     timer.Destroy("RaceCountdown")
     timer.Destroy("Countdown")

@@ -28,6 +28,14 @@ function ENT:Initialize()
 	self.Arrow:SetModelScale( 0.8 )
 
 	self.Arrow:SetParent( self )
+
+	self.TimeTaken = 0
+
+	timer.Create( "Time_Me_" .. self:EntIndex(), 1, 0, function()
+		if !self:IsValid() then return end
+
+		self.TimeTaken = self.TimeTaken + 1
+	end)
 end
  
 function ENT:Use( _Player, _Caller )
@@ -38,11 +46,8 @@ function ENT:Think()
 
 	self.Arrow:SetAngles( self:LocalToWorldAngles( Angle( 90, 0, 0 ) ) )
 
-	//ratio = Lerp( 0.0001, ratio, 9999 )
-	//self.Arrow:SetAngles( self.Arrow:GetAngles() + Angle( 0, ratio % 360, 0 ) )
-
 	for k, v in pairs( ents.FindInSphere( self:GetPos( ), 256 ) ) do
-		if v:IsValid() && v:IsPlayer() then
+		if v:IsValid() && v:IsPlayer() && v:InVehicle() then
 
 			if v.Checkpoints then
 				if v.Checkpoints && v.Checkpoints[ self.CheckPointNum ] then
@@ -55,14 +60,20 @@ function ENT:Think()
 
 				--PASSED CHECKPOINT
 
+				--for server and shared shit
 				v.Checkpoints[ self.CheckPointNum ] = true
 
-				self:SetNoDraw( true ) --MOVE INTO CLIENT FROM SERVER - IMPORTANTE
-				self.Arrow:SetNoDraw( true ) --MOVE INTO CLIENT FROM SERVER - IMPORTANTE
+				--for clients & gui shit
+				v:SetNW2Int( "Checkpoint", self.CheckPointNum )
+
+				--self:SetNoDraw( true ) --MOVE INTO CLIENT FROM SERVER - IMPORTANTE
+				--self.Arrow:SetNoDraw( true ) --MOVE INTO CLIENT FROM SERVER - IMPORTANTE
 
 				net.Start( '_PassedCheckpoint' )
 				net.WriteEntity( self )
 				net.Send( v )
+
+				v:SetNW2Int( "Checkpoint_Time", self.TimeTaken )
 			end
 		end
 	end

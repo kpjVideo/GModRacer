@@ -40,7 +40,7 @@ function _GM.SV_Networking:UpdateLocation( _Player )
       end,
       function( error )
          _GM.ErrorHandler:DebugPrint( 1, "GEOIP Failed for: " .. _Player:Nick(), Color( 255, 0, 0 ) )
-         //houston, we have a problem...
+         --houston, we have a problem...
       end
    )
 end
@@ -79,6 +79,7 @@ function _GM.SV_Networking:PlayerLoadout( _Player )
 		_Player:Give("weapon_physgun")
 		_Player:Give("gmod_tool")
 	end
+  
 end
 
 hook.Add( 'PlayerInitialSpawn', '_LoadData', function( _Player )
@@ -197,6 +198,42 @@ function _P:Invis( _Bool )
    end
 end
 
+function _P:PurchaseVehicle( _ID )
+    if !_ID || !VEHICLES[ _ID ] then
+
+        _GM.ErrorHandler:DebugPrint( 1, self:Nick()  .. " attempted to purchase a non-existant vehicle with the ID: '" .. _ID .. "'", Color( 255, 0, 0 ) )
+
+        return --uh oh. Car doesn't exist (wtf?)
+    end
+
+    --take money and shit here
+    local __vehicles = self:GrabVehicles()
+
+    local __found = false
+
+    for k, v in pairs( __vehicles ) do
+        if v == _ID then
+            __found = true
+
+            break
+        end
+    end
+
+    if not __found then
+        table.insert( self.Vehicles, _ID )
+
+        _GM.MYSQL:Query( "UPDATE `_players` SET _vehicles='" .. _GM.MYSQL:Escape( util.TableToJSON( self.Vehicles ) ) .. "' WHERE `_steamid`='" .. _GM.MYSQL:Escape( self:SteamID() ) .. "'", function( YEET )
+            _GM.ErrorHandler:DebugPrint( 1, "Player (" .. self:Nick() .. ") successfully purchased: " .. _ID, Color( 255, 0, 255 ) )
+        end)
+    else
+        _GM.ErrorHandler:DebugPrint( 1, "Player (" .. self:Nick() .. ") attempted to purchase a car that is already owned.", Color( 255, 0, 0 ) )
+    end
+
+    net.Start( "_VEH" )
+    net.WriteTable( self.Vehicles )
+    net.Send( self )
+end
+
 hook.Add( "PlayerLoadout", "KappaJ.Debug.PlayerLoadout.Strip", function( _Player )
    _Player:StripWeapons()
 end)
@@ -210,15 +247,15 @@ hook.Add( 'PlayerSpawn', '_GiveWeapons', function( _Player )
 end)
 
 hook.Add( 'PlayerNoClip', '_StopNoclipping', function( _Player )
-      return _Player:GetAssLevel() == ASS_LVL_DEVELOPER || _Player:GetAssLevel() == ASS_LVL_SERVER_OWNER
+      return _Player:IsSuperAdmin()
 end)
 
 function _P:IsAdmin()
-      return self:GetAssLevel() == ASS_LVL_SERVER_OWNER || self:GetAssLevel() == ASS_LVL_DEVELOPER
+      return true --self:GetAssLevel() == ASS_LVL_SERVER_OWNER || self:GetAssLevel() == ASS_LVL_DEVELOPER
 end
 
 function _P:IsSuperAdmin()
-   return self:GetAssLevel() == ASS_LVL_SERVER_OWNER || self:GetAssLevel() == ASS_LVL_DEVELOPER
+   return true --self:GetAssLevel() == ASS_LVL_SERVER_OWNER || self:GetAssLevel() == ASS_LVL_DEVELOPER
 end
 
 
@@ -264,7 +301,7 @@ function _GM.SV_Networking:LoadPlayer( _Entity )
 		local _Physgun = _RawData._physgun
 		local _Races_Won = _RawData._races_won
 
-      _Entity:SetNW2Int( "RacesWon", _Races_Won )
+    _Entity:SetNW2Int( "RacesWon", _Races_Won )
 
 		local ConvertedColor = string.Explode( ';', _Color )
 		local ConvertedPhysgun = string.Explode( ';', _Physgun )
@@ -272,39 +309,26 @@ function _GM.SV_Networking:LoadPlayer( _Entity )
 		_Entity:SetPlayerColor( Vector( tonumber( ConvertedColor[1] ) or 1, tonumber( ConvertedColor[2] ) or 1, tonumber( ConvertedColor[3] ) or 1 ) )
 		_Entity:SetWeaponColor( Vector( tonumber( ConvertedPhysgun[1] ) or 1, tonumber( ConvertedPhysgun[2] ) or 1, tonumber( ConvertedPhysgun[3] ) or 1 ) )
 
-		//_Entity:SetCash( _Cash )
-		//_Entity:SetXP( _XP )
+		--_Entity:SetCash( _Cash )
+		--_Entity:SetXP( _XP )
 
 		RANK = Ranks[ tostring( _Rank ) ] 
 
 		if RANK then
 			_Entity:SetAssLevel(RANK)
-			_GM.SV_Networking:PlayerLoadout( _Entity )
 
 			_GM.ErrorHandler:DebugPrint( 1, _Entity:Nick() .. "'s set rank to: " .. tostring( _Rank ) ..  "", Color( 255, 0, 0 ) )
 		end
 	end)
 
-	_GM.SV_Networking:PlayerLoadout( _Entity )
+	   _GM.SV_Networking:PlayerLoadout( _Entity )
+
     _GM.ErrorHandler:DebugPrint( 1, _Entity:Nick() .. "'s profile has been successfully loaded.", Color( 255, 0, 0 ) )
 end
 
 function _GM.SV_Networking:RegisterNetworkedStrings( )
 	util.AddNetworkString("_BeginRace")
+   util.AddNetworkString( "_VEH" )
 end
 
 _GM.SV_Networking:RegisterNetworkedStrings()
-
-
-concommand.Add("VC_OpenCarDealerMenu", function()
-   
-   ent = nil
-
-   for k, v in pairs( ents.FindByClass( "vc_npc_cardealer" ) ) do
-      ent = v
-   end
-
-   if IsValid(ent) then
-      ent:VC_Menu_CD_Open( Entity(1) )
-   end
-end)

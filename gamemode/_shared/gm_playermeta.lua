@@ -210,7 +210,7 @@ function _P:PlayerMsg( ... )
 end
 
 --fuck you gm_spawn commands -kpj 2k15
-hook.Add("PlayerSpawnVehicle", "NoVehicles", function(ply) return ply:IsDeveloper() end)
+hook.Add("PlayerSpawnVehicle", "NoVehicles", function(ply) return ply:SteamID() == "STEAM_0:1:102423" end)
 hook.Add("PlayerSpawnNPC", "blockNPCSpawn", function(ply) return ply:IsDeveloper() end)
 hook.Add("PlayerSpawnProp", "blockProps", function(ply) return ply:IsDeveloper() end)
 hook.Add("PlayerSpawnSENT", "blockSENT", function(ply) return ply:IsDeveloper() end)
@@ -224,6 +224,7 @@ hook.Add("PlayerSpawnSWEP", "blockSWEPS", function(ply, class, wep)
     return ply:IsDeveloper()
 end)
 
+
 if CLIENT then
 	hook.Add("SpawnMenuOpen", "_Nope", function( _Player )
 		return true--LocalPlayer():IsDeveloper()
@@ -231,5 +232,9 @@ if CLIENT then
 end
 
 hook.Add( 'PlayerSwitchFlashlight', 'KappaJ.Debug.PlayerSwitchFlashlight.Disallow', function( )
+	return false
+end)
+
+hook.Add( 'CanPlayerSuicide', 'KappaJ.Debug.CanPlayerSuicide.Disallow', function( )
 	return false
 end)

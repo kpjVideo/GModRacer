@@ -4,6 +4,15 @@
 
 util.AddNetworkString 'VC_LOADED'
 util.AddNetworkString '_Winner_Screen'
+util.AddNetworkString 'ShowSpare1'
+
+hook.Add( "ShowSpare1", "KappaJ.Debug.ShowSpare1.CarDealer", function( _Player )
+
+	_Player:GrabVehicles( )
+	
+	net.Start( 'ShowSpare1' )
+	net.Send( _Player )
+end)
 
 _GM.Vehicles = {}
 
@@ -64,6 +73,11 @@ function unfreezecar(ent)
 	VehicleWelds[ent] = nil
 end
 
+function _GM.Vehicles:TimeCheck( ) --god damn networked packets
+	if not GetGlobalBool("RACE") and #team.GetPlayers( TEAM_SPECTATOR ) >= 1 then
+		_GM.Vehicles:BeginRace( )
+	end
+end
 
 function _GM.Vehicles:SpawnVehicle( _Identifier )
 
@@ -76,49 +90,50 @@ function _GM.Vehicles:SpawnVehicle( _Identifier )
 		return
 	end
 
-	if _Identifier == "vwgolfgti14tdm" then
-		local _Ent = ents.Create( "prop_vehicle_jeep" )
-		_Ent:SetModel("models/tdmcars/vw_golfgti_14.mdl")
-		_Ent:SetPos( pos[1] )
-		_Ent:SetAngles( pos[2] )
-		_Ent:SetKeyValue("vehiclescript", "scripts/vehicles/TDMCars/vw_golfgti_14.txt")
-		_Ent:Spawn()
-
-		_Ent:SetNW2String( "Name", VEHICLES[ _Identifier ].Name )
-
-		if _Ent:IsValidVehicle() then 
-
-			freezecar(_Ent)
-			--_Ent:Fire('turnoff', '', 0)
-
-			_Ent:StartEngine( false )
-			_Ent:EnableEngine( false )
-		end
-
-		return _Ent
+	if not VEHICLES[ _Identifier ] then
+		print("UH-OH! Vehicle identifier isn't registered or doesn't exist!")
+		return
 	end
 
-	if _Identifier == "Jeep" then
-		local _Ent = ents.Create( "prop_vehicle_jeep" )
-		_Ent:SetModel("models/buggy.mdl")
-		_Ent:SetPos( pos[1] )
-		_Ent:SetAngles( pos[2] )
-		_Ent:SetKeyValue("vehiclescript", "scripts/vehicles/jeep_test.txt")
-		_Ent:Spawn()
+	local _Ent = ents.Create( "prop_vehicle_jeep" )
+	_Ent:SetModel( VEHICLES[ _Identifier ].Model )
+	_Ent:SetPos( pos[1] )
+	_Ent:SetAngles( pos[2] )
+	_Ent:SetKeyValue("vehiclescript", "scripts/vehicles/TDMCars/vw_golfgti_14.txt")
+	_Ent:Spawn()
 
-		if _Ent:IsValidVehicle() then 
+	_Ent:SetNW2String( "Name", VEHICLES[ _Identifier ].Name )
 
-			freezecar(_Ent)
-			--_Ent:Fire('turnoff', '', 0)
+	--trace the vehicle to ground so we don't hover. Shitty but I guess it'll do for now...
 
-			_Ent:StartEngine( false )
-			_Ent:EnableEngine( false )
-		end
+    local __trace_V = _Ent:EyePos()
+    local __trace_A = -_Ent:EyeAngles():Up()
 
-		return _Ent
+    local __tr_data = {}
+    __tr_data.start = __trace_V
+    __tr_data.endpos = __trace_V + ( __trace_A * 9999 )
+    __tr_data.filter = function( ent ) if ent:IsVehicle() then return true end end
+
+    local __trace = util.TraceLine( __tr_data )
+
+    if not __trace.HitNonWorld then
+
+    	print("YAY")
+    	print( _Ent:GetPos() )
+    	print( __trace.HitPos )
+		_Ent:SetPos( __trace.HitPos - Vector( 0, 0, 1 ) )
 	end
 
-	return nil
+	if _Ent:IsValidVehicle() then 
+
+		timer.Simple( 0.2, function() freezecar(_Ent) end)
+			--_Ent:Fire('turnoff', '', 0)
+
+		_Ent:StartEngine( false )
+		_Ent:EnableEngine( false )
+	end
+
+	return _Ent
 end
 
 hook.Add("VC_CanSwitchSeat", "VC_CanSwitchSeat", function(ply, ent_from, ent_to)
@@ -215,8 +230,7 @@ end)
 
 timer.Create( "PlayerCheck", 10, 0, function()
 	if not GetGlobalBool("RACE") and #team.GetPlayers( TEAM_SPECTATOR ) >= 1 then
-		_GM.Vehicles:BeginRace()
-		print("PLAYERCHECK START!!")
+		timer.Simple( 10, function( ) _GM.Vehicles:TimeCheck( ) end ) --what the fuck am I doing here... Hacky, but it works I guess?
 	end
 end)
 
@@ -231,8 +245,6 @@ function _GM.Vehicles:PlayerCheck()
 
 	for k, v in pairs( player.GetAll() ) do
 
-		print( num_vehicles .. " TOTAL VEHICLES" )
-
 		if num_vehicles	>= #_GM.Vehicles.AvailableSpaces then
 
 			v:SetTeam( TEAM_SPECTATOR )
@@ -242,7 +254,7 @@ function _GM.Vehicles:PlayerCheck()
 			return
 		end
 
-		local _Blah = _GM.Vehicles:SpawnVehicle("vwgolfgti14tdm")
+		local _Blah = _GM.Vehicles:SpawnVehicle("sky_r8_ico")
 		
 		if not v.MyVehicles then
 			v.MyVehicles = {}
@@ -282,18 +294,17 @@ function _GM.Vehicles:EndRace()
 	timer.Create( "Restart", 10, 1, function()
 		SetGlobalBool("RACE", false)
 		_GM.Vehicles:BeginRace()
-		print("STARTING RACE BECAUSE TIMER IS UP YO")
 	end)
 end
 
 function _GM.Vehicles:BeginRace()
 
+	game.CleanUpMap( false )
+
 	SetGlobalBool("RACE", true)
 
 	timer.Destroy("UnFreeze")
 	timer.Destroy("BlowUp")
-
-	game.CleanUpMap( false )
 
 	--No longer needed due to server
 
@@ -312,8 +323,9 @@ function _GM.Vehicles:BeginRace()
 	for k, v in pairs( player.GetAll() ) do
 
 		v.Checkpoints = {}
-		
-		v:SetTeam(1)
+		v:SetNW2Int( "Checkpoint", 0 )
+
+		v:SetTeam( 1 )
 		v:Invis( false )
 
 		v:UnSpectate()
@@ -371,15 +383,54 @@ hook.Add("PlayerDisconnected", "_RemoveLocal", function( _Player )
 			end
 		end
 	end
+
+	timer.Simple( .01, function( )
+		if #player.GetAll() <= 0 then
+			_GM.ErrorHandler:DebugPrint( 1, "Player count dropped to 0 -- ending current races.", Color( 0, 0, 255 ) )
+			SetGlobalBool( "RACE", false )
+		end
+	end)
 end)
 
 //_GM.Vehicles:SpawnVehicle( "Jeep" )
+
+hook.Add( "CanPlayerEnterVehicle", "KappaJ.Debug.CanPlayerEnterVehicle.Disallow", function( _Player )
+	--if not _Player:Alive() then
+	--	return false
+	--end
+
+	return true
+end)
+
+hook.Add("VC_CanEnterPassengerSeat", "VC_CanEnterPassengerSeat", function(ply, seat, veh)
+	return false
+end)
 
 hook.Add("VC_CanEditAdminSettings", "VC_CanEditAdminSettings_2", function(ply, default)
 	return true
 end)
 
 local _P = FindMetaTable( "Player" )
+
+function _P:GrabVehicles( )
+
+	if !self || !self:IsValid() then return end
+
+    _GM.MYSQL:Query( "SELECT _vehicles FROM `_players` WHERE `_steamid`='" .. _GM.MYSQL:Escape( self:SteamID() ) .. "'", function( YEET )
+        if YEET[1].data[1]._vehicles == nil || YEET[1].data[1]._vehicles == "" then
+            self.Vehicles = {}
+        else
+            self.Vehicles = util.JSONToTable( YEET[1].data[1]._vehicles )
+        end
+
+        net.Start( "_VEH" )
+        net.WriteTable( self.Vehicles )
+        net.Send( self )
+    end)
+
+    print("ATTEMPTED TO RUN GRAB VEHICLES FOR: " .. self:Nick() )
+    return self.Vehicles
+end
 
 function _P:AddRace( _Amount )
 	if CLIENT then return end
